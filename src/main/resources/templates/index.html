@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Cloud</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary: #6b7280;
+            --success: #10b981;
+            --danger: #ef4444;
+            --light: #f9fafb;
+            --dark: #1f2937;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            color: var(--dark);
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto;
+            background-color: white;
+            min-height: 100vh;
+        }
+
+        header {
+            background: linear-gradient(90deg, var(--primary) 0%, #818cf8 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            position: relative;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            opacity: 0.9;
+            max-width: 600px;
+        }
+
+        .content {
+            padding: 2rem;
+            max-width: 100%;
+        }
+
+        .upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            background-color: #f9fafb;
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background-color: #f5f7ff;
+        }
+
+        .upload-area.drag-over {
+            border-color: var(--primary);
+            background-color: #eff6ff;
+        }
+
+        #fileInput {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .upload-text h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .upload-text p {
+            color: var(--secondary);
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background-color: #f3f4f6;
+            color: var(--dark);
+        }
+
+        .btn-secondary:hover {
+            background-color: #e5e7eb;
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+
+        .btn i {
+            margin-right: 0.5rem;
+        }
+
+        #status {
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 8px;
+            display: none;
+        }
+
+        #status.success {
+            background-color: #ecfdf5;
+            color: #065f46;
+            border-left: 4px solid var(--success);
+            display: block;
+        }
+
+        #status.error {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border-left: 4px solid var(--danger);
+            display: block;
+        }
+
+        #status.loading {
+            background-color: #eff6ff;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+            display: flex;
+            align-items: center;
+        }
+
+        .gallery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .gallery-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .gallery-empty {
+            text-align: center;
+            padding: 4rem 2rem;
+            background-color: #f9fafb;
+            border-radius: 12px;
+            color: var(--secondary);
+        }
+
+        .gallery-empty i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+        }
+
+        .image-card {
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .image-preview {
+            position: relative;
+            height: 180px;
+            background-color: #f3f4f6;
+            overflow: hidden;
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .image-card:hover .image-preview img {
+            transform: scale(1.05);
+        }
+
+        .image-actions {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .image-card:hover .image-actions {
+            opacity: 1;
+        }
+
+        .image-action-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 0.5rem;
+            background-color: white;
+            color: var(--dark);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .image-action-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .image-action-btn.delete:hover {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .image-action-btn.view:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .image-info {
+            padding: 1rem;
+        }
+
+        .image-name {
+            font-size: 0.875rem;
+            color: var(--secondary);
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .image-date {
+            font-size: 0.75rem;
+            color: #9ca3af;
+        }
+
+        .loader {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin-right: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 12px;
+            max-width: 90%;
+            max-height: 90%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background-color: rgba(255, 255, 255, 0.8);
+            color: var(--dark);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .modal-image {
+            display: block;
+            max-width: 100%;
+            max-height: 80vh;
+        }
+
+        /* Dark mode toggle */
+        .theme-toggle {
+            position: absolute;
+            top: 1.5rem;
+            right: 2rem;
+            width: 50px;
+            height: 26px;
+            background-color: white;
+            border-radius: 13px;
+            cursor: pointer;
+        }
+
+        .theme-toggle::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+        }
+
+        .dark-mode .theme-toggle::after {
+            transform: translateX(24px);
+        }
+
+        .dark-mode {
+            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+            color: #f9fafb;
+        }
+
+        .dark-mode .container {
+            background-color: #1f2937;
+        }
+
+        .dark-mode .upload-area {
+            background-color: #111827;
+            border-color: #374151;
+        }
+
+        .dark-mode .upload-area:hover {
+            background-color: #1e293b;
+            border-color: var(--primary);
+        }
+
+        .dark-mode .btn-secondary {
+            background-color: #374151;
+            color: #f9fafb;
+        }
+
+        .dark-mode .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+
+        .dark-mode .gallery-empty,
+        .dark-mode .image-preview {
+            background-color: #111827;
+        }
+
+        .dark-mode .image-card {
+            background-color: #1f2937;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark-mode .modal-content {
+            background-color: #1f2937;
+        }
+
+        .dark-mode .image-name {
+            color: #d1d5db;
+        }
+
+        .dark-mode .image-date {
+            color: #9ca3af;
+        }
+
+        /* Animation effects */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .slide-up {
+            animation: slideUp 0.5s ease forwards;
+        }
+
+        /* Upload progress bar */
+        .progress-container {
+            width: 100%;
+            background-color: #e5e7eb;
+            border-radius: 8px;
+            margin-top: 1rem;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: linear-gradient(90deg, var(--primary) 0%, #818cf8 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .dark-mode .progress-container {
+            background-color: #374151;
+        }
+
+        /* Add these styles to your existing CSS section in the HTML file */
+        .pagination-info {
+            margin-bottom: 10px;
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        .dark-mode .pagination-info {
+            color: #ccc;
+        }
+
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            padding: 10px 0;
+        }
+
+        .pagination-btn {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            margin: 0 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background-color: #3367d6;
+        }
+
+        .pagination-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .pagination-btn i {
+            margin: 0 4px;
+        }
+
+        .page-info {
+            margin: 0 12px;
+            color: #555;
+        }
+
+        .dark-mode .page-info {
+            color: #ccc;
+        }
+
+        .dark-mode .pagination-btn:disabled {
+            background-color: #4a5568;
+            color: #a0aec0;
+        }
+
+        /* Responsive adjustments for different screen sizes */
+        @media (max-width: 1400px) {
+            .image-grid {
+                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .image-grid {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .image-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            }
+
+            .content {
+                padding: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .image-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 1rem;
+            }
+
+            .image-preview {
+                height: 120px;
+            }
+
+            .image-info {
+                padding: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>Image Cloud</h1>
+        <p>Store, view, and manage your images with ease</p>
+        <div class="theme-toggle" id="themeToggle"></div>
+    </header>
+
+    <div class="content">
+        <div class="upload-area" id="uploadArea">
+            <input type="file" id="fileInput" accept="image/*" multiple>
+            <div class="upload-icon">
+                <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <div class="upload-text">
+                <h3>Upload Images</h3>
+                <p>Drag & drop images here or click to browse</p>
+                <button class="btn btn-primary">
+                    <i class="fas fa-upload"></i> Select Files
+                </button>
+            </div>
+        </div>
+
+        <div id="status"></div>
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <div class="gallery-header">
+            <h2>Image Gallery</h2>
+            <button class="btn btn-secondary" id="loadImages">
+                <i class="fas fa-sync-alt"></i> Refresh Gallery
+            </button>
+        </div>
+
+        <div id="imageContainer"></div>
+    </div>
+</div>
+
+<div class="modal" id="imageModal">
+    <div class="modal-content">
+        <div class="modal-close" id="modalClose">
+            <i class="fas fa-times"></i>
+        </div>
+        <img src="" alt="Full size image" class="modal-image" id="modalImage">
+    </div>
+</div>
+
+<script>
+    const themeToggle = document.getElementById('themeToggle');
+    const body = document.body;
+
+
+    if (localStorage.getItem('darkMode') === 'true') {
+        body.classList.add('dark-mode');
+    }
+
+    themeToggle.addEventListener('click', () => {
+        body.classList.toggle('dark-mode');
+        localStorage.setItem('darkMode', body.classList.contains('dark-mode'));
+    });
+
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight() {
+        uploadArea.classList.add('drag-over');
+    }
+
+    function unhighlight() {
+        uploadArea.classList.remove('drag-over');
+    }
+
+    uploadArea.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        fileInput.files = files;
+        uploadFiles();
+    }
+
+    const imageModal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+    const modalClose = document.getElementById('modalClose');
+
+    function openModal(imageSrc) {
+        modalImage.src = imageSrc;
+        imageModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        imageModal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    modalClose.addEventListener('click', closeModal);
+    imageModal.addEventListener('click', function(e) {
+        if (e.target === imageModal) {
+            closeModal();
+        }
+    });
+
+    fileInput.addEventListener('change', uploadFiles);
+
+    async function uploadFiles() {
+        const files = fileInput.files;
+
+        if (!files.length) return;
+
+        const statusDiv = document.getElementById('status');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+
+        statusDiv.className = 'loading';
+        statusDiv.innerHTML = '<div class="loader"></div> Uploading images...';
+        statusDiv.style.display = 'flex';
+        progressContainer.style.display = 'block';
+
+        let uploadedCount = 0;
+        let failedCount = 0;
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const percentComplete = Math.round((i / files.length) * 100);
+            progressBar.style.width = percentComplete + '%';
+
+            try {
+                await uploadSingleFile(file);
+                uploadedCount++;
+            } catch (error) {
+                failedCount++;
+                console.error('Error uploading file:', error);
+            }
+        }
+
+        progressBar.style.width = '100%';
+
+        if (failedCount === 0) {
+            statusDiv.className = 'success';
+            statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> Successfully uploaded ${uploadedCount} image${uploadedCount !== 1 ? 's' : ''}!`;
+            loadImages();
+        } else {
+            statusDiv.className = 'error';
+            statusDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> Uploaded ${uploadedCount} image${uploadedCount !== 1 ? 's' : ''}, but ${failedCount} failed.`;
+            loadImages();
+        }
+
+        fileInput.value = '';
+
+        setTimeout(() => {
+            progressContainer.style.display = 'none';
+            progressBar.style.width = '0%';
+        }, 2000);
+    }
+
+    async function uploadSingleFile(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/api/images/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error('Upload failed');
+        }
+
+        return response;
+    }
+
+    document.getElementById('loadImages').addEventListener('click', function() {
+        loadImages(0, 12);
+    });
+
+    async function loadImages(page = 0, size = 12) {
+        const imageContainer = document.getElementById('imageContainer');
+        imageContainer.innerHTML = '<div class="gallery-empty slide-up"><i class="fas fa-spinner fa-spin"></i><h3>Loading images...</h3></div>';
+
+        try {
+            const response = await fetch(`/api/images?page=${page}&size=${size}`);
+
+            if (response.ok) {
+                const data = await response.json();
+                const imageUrls = data.content;
+                const totalPages = data.totalPages;
+                const currentPage = data.currentPage;
+                const totalElements = data.totalElements;
+
+                if (imageUrls.length === 0) {
+                    imageContainer.innerHTML = '<div class="gallery-empty slide-up"><i class="fas fa-images"></i><h3>No images found</h3><p>Upload some images to get started</p></div>';
+                    return;
+                }
+
+                imageContainer.innerHTML = '';
+
+                const paginationInfo = document.createElement('div');
+                paginationInfo.className = 'pagination-info';
+                paginationInfo.innerHTML = `<span>Showing ${imageUrls.length} of ${totalElements} images</span>`;
+                imageContainer.appendChild(paginationInfo);
+
+                const imageGrid = document.createElement('div');
+                imageGrid.className = 'image-grid';
+
+                const calculateOptimalColumns = () => {
+                    const containerWidth = imageContainer.offsetWidth;
+                    let columns;
+
+                    if (containerWidth > 1400) columns = Math.floor(containerWidth / 220);
+                    else if (containerWidth > 1200) columns = Math.floor(containerWidth / 200);
+                    else if (containerWidth > 768) columns = Math.floor(containerWidth / 180);
+                    else if (containerWidth > 480) columns = Math.floor(containerWidth / 150);
+                    else columns = Math.floor(containerWidth / 120);
+
+                    return Math.max(columns, 2);
+                };
+
+                const columns = calculateOptimalColumns();
+                imageGrid.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+
+                imageUrls.forEach((url, index) => {
+                    const fileName = url.substring(url.lastIndexOf('/') + 1);
+
+                    const card = document.createElement('div');
+                    card.className = 'image-card slide-up';
+                    card.style.animationDelay = (index % columns * 0.05) + 's';
+
+                    const previewDiv = document.createElement('div');
+                    previewDiv.className = 'image-preview';
+
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.alt = fileName;
+                    img.loading = 'lazy';
+
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'image-actions';
+
+                    const viewBtn = document.createElement('div');
+                    viewBtn.className = 'image-action-btn view';
+                    viewBtn.innerHTML = '<i class="fas fa-eye"></i>';
+                    viewBtn.onclick = () => openModal(url);
+
+                    const deleteBtn = document.createElement('div');
+                    deleteBtn.className = 'image-action-btn delete';
+                    deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+                    deleteBtn.onclick = () => deleteImage(fileName, card);
+
+                    actionsDiv.appendChild(viewBtn);
+                    actionsDiv.appendChild(deleteBtn);
+
+                    previewDiv.appendChild(img);
+                    previewDiv.appendChild(actionsDiv);
+
+                    const infoDiv = document.createElement('div');
+                    infoDiv.className = 'image-info';
+
+                    const nameDiv = document.createElement('div');
+                    nameDiv.className = 'image-name';
+                    nameDiv.textContent = fileName;
+
+                    const dateDiv = document.createElement('div');
+                    dateDiv.className = 'image-date';
+                    dateDiv.textContent = 'Uploaded recently';
+
+                    infoDiv.appendChild(nameDiv);
+                    infoDiv.appendChild(dateDiv);
+
+                    card.appendChild(previewDiv);
+                    card.appendChild(infoDiv);
+
+                    imageGrid.appendChild(card);
+                });
+
+                imageContainer.appendChild(imageGrid);
+
+                const paginationControls = document.createElement('div');
+                paginationControls.className = 'pagination-controls';
+
+                const prevButton = document.createElement('button');
+                prevButton.className = 'pagination-btn';
+                prevButton.innerHTML = '<i class="fas fa-chevron-left"></i> Previous';
+                prevButton.disabled = currentPage === 0;
+                prevButton.onclick = () => loadImages(currentPage - 1, size);
+
+
+                const nextButton = document.createElement('button');
+                nextButton.className = 'pagination-btn';
+                nextButton.innerHTML = 'Next <i class="fas fa-chevron-right"></i>';
+                nextButton.disabled = currentPage >= totalPages - 1;
+                nextButton.onclick = () => loadImages(currentPage + 1, size);
+
+                const pageInfo = document.createElement('span');
+                pageInfo.className = 'page-info';
+                pageInfo.textContent = `Page ${currentPage + 1} of ${totalPages}`;
+
+                paginationControls.appendChild(prevButton);
+                paginationControls.appendChild(pageInfo);
+                paginationControls.appendChild(nextButton);
+
+                imageContainer.appendChild(paginationControls);
+
+                window.addEventListener('resize', () => {
+                    const columns = calculateOptimalColumns();
+                    imageGrid.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+                });
+
+            } else {
+                imageContainer.innerHTML = '<div class="gallery-empty slide-up"><i class="fas fa-exclamation-circle"></i><h3>Failed to load images</h3><p>' + response.statusText + '</p></div>';
+            }
+        } catch (error) {
+            imageContainer.innerHTML = '<div class="gallery-empty slide-up"><i class="fas fa-exclamation-triangle"></i><h3>Error loading images</h3><p>' + error.message + '</p></div>';
+        }
+    }
+
+    async function deleteImage(fileName, cardElement) {
+        if (!confirm('Are you sure you want to delete this image?')) {
+            return;
+        }
+
+        try {
+            cardElement.style.opacity = '0.5';
+            cardElement.style.transform = 'scale(0.95)';
+
+            const response = await fetch(`/api/images/${fileName}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                cardElement.style.height = cardElement.offsetHeight + 'px';
+                setTimeout(() => {
+                    cardElement.style.height = '0';
+                    cardElement.style.margin = '0';
+                    cardElement.style.padding = '0';
+                    cardElement.style.overflow = 'hidden';
+
+                    setTimeout(() => {
+                        cardElement.remove();
+
+                        const imageGrid = document.querySelector('.image-grid');
+                        if (imageGrid && imageGrid.children.length === 0) {
+                            document.getElementById('imageContainer').innerHTML =
+                                '<div class="gallery-empty slide-up"><i class="fas fa-images"></i><h3>No images found</h3><p>Upload some images to get started</p></div>';
+                        }
+                    }, 300);
+                }, 100);
+
+                const statusDiv = document.getElementById('status');
+                statusDiv.className = 'success';
+                statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> Image deleted successfully!';
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 3000);
+            } else {
+                cardElement.style.opacity = '1';
+                cardElement.style.transform = 'none';
+                alert('Failed to delete image: ' + response.statusText);
+            }
+        } catch (error) {
+            cardElement.style.opacity = '1';
+            cardElement.style.transform = 'none';
+            alert('Failed to delete image: ' + error.message);
+        }
+    }
+
+    loadImages();
+</script>
+</body>
+</html>
