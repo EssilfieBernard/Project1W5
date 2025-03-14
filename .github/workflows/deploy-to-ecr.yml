@@ -43,34 +43,23 @@ jobs:
           IMAGE_TAG: latest
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest  .
-          
+
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          
+
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      - name: Create imagedefinitions.json
-        env:
-          ECR_REGISTRY: 985539758163.dkr.ecr.us-east-1.amazonaws.com
-          ECR_REPOSITORY: project1
-          IMAGE_TAG: latest
-          CONTAINER_NAME: project1-container
-        run: |
-          echo '[{"name":"'$CONTAINER_NAME'","imageUri":"'$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG'"}]' > imagedefinitions.json
-          cat imagedefinitions.json
+      - name: Update ECS Task Definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: project1-container
+          image: ${{ steps.build-image.outputs.image }}
 
-      - name: Create ZIP file
-        run: |
-          zip -r deployment-artifacts.zip imagedefinitions.json
-
-      - name: Upload ZIP artifact to S3
-        env:
-          S3_BUCKET: essilfie2
-          S3_KEY: deployment-source/deployment-artifacts.zip
-        run: |
-          aws s3 cp deployment-artifacts.zip s3://$S3_BUCKET/$S3_KEY
-
-      - name: Trigger CodePipeline
-        env:
-          PIPELINE_NAME: DeployToECS
-        run: |
-          aws codepipeline start-pipeline-execution --name $PIPELINE_NAME
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: project1-service
+          cluster: Project1-Cluster
+          wait-for-service-stability: true
