@@ -1,5 +1,5 @@
 {
-  "taskDefinitionArn": "arn:aws:ecs:us-east-1:985539758163:task-definition/Project1TaskDefinition:2",
+  "taskDefinitionArn": "arn:aws:ecs:us-east-1:985539758163:task-definition/Project1TaskDefinition:5",
   "containerDefinitions": [
     {
       "name": "project1-container",
@@ -15,12 +15,7 @@
         }
       ],
       "essential": true,
-      "environment": [
-        {
-          "name": "S3_BUCKET",
-          "value": "essilfie"
-        }
-      ],
+      "environment": [],
       "environmentFiles": [],
       "mountPoints": [],
       "volumesFrom": [],
@@ -42,9 +37,9 @@
   ],
   "family": "Project1TaskDefinition",
   "taskRoleArn": "arn:aws:iam::985539758163:role/ecsTaskRoleWithS3Access",
-  "executionRoleArn": "arn:aws:iam::985539758163:role/ecsTaskExecutionRole",
+  "executionRoleArn": "arn:aws:iam::985539758163:role/ecsTaskRoleWithS3Access",
   "networkMode": "awsvpc",
-  "revision": 2,
+  "revision": 5,
   "volumes": [],
   "status": "ACTIVE",
   "requiresAttributes": [
@@ -93,7 +88,7 @@
     "cpuArchitecture": "X86_64",
     "operatingSystemFamily": "LINUX"
   },
-  "registeredAt": "2025-03-14T16:08:35.868Z",
+  "registeredAt": "2025-03-15T15:03:39.572Z",
   "registeredBy": "arn:aws:iam::985539758163:user/main",
   "enableFaultInjection": false,
   "tags": []

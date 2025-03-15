@@ -3,7 +3,6 @@ package com.essilfie.UploadToS3;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -17,8 +16,7 @@ public class ImageService {
     @Autowired
     private AmazonS3 amazonS3;
 
-    @Value("${S3_BUCKET}")
-    private String bucketName;
+    private final String bucketName = "essilfie";
 
     public String uploadImage(MultipartFile file) throws IOException {
         String fileName = generateFileName(file);
