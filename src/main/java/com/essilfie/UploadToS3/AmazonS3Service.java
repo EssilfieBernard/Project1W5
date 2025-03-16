@@ -11,7 +11,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class ImageService {
+public class AmazonS3Service {
 
     @Autowired
     private AmazonS3 amazonS3;

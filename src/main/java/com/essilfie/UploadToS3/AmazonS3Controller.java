@@ -11,18 +11,18 @@ import java.util.Map;
 @RestController
 @CrossOrigin
 @RequestMapping("/api/images")
-public class ImageController {
+public class AmazonS3Controller {
 
-    private final ImageService imageService;
+    private final AmazonS3Service amazonS3Service;
 
-    public ImageController(ImageService imageService) {
-        this.imageService = imageService;
+    public AmazonS3Controller(AmazonS3Service amazonS3Service) {
+        this.amazonS3Service = amazonS3Service;
     }
 
     @PostMapping("/upload")
     public ResponseEntity<Map<String, String>> uploadImage(@RequestParam("file") MultipartFile file) {
         try {
-            String fileName = imageService.uploadImage(file);
+            String fileName = amazonS3Service.uploadImage(file);
             Map<String, String> response = new HashMap<>();
             response.put("message", "Image uploaded successfully: " + fileName);
             response.put("url", fileName);
@@ -38,7 +38,7 @@ public class ImageController {
     @GetMapping("/{fileName}")
     public ResponseEntity<String> getImage(@PathVariable String fileName) {
         try {
-            String url = imageService.getImageUrl(fileName);
+            String url = amazonS3Service.getImageUrl(fileName);
             return new ResponseEntity<>(url, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>("Fetch failed: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -49,11 +49,11 @@ public class ImageController {
     public ResponseEntity<Map<String, Object>> getAllImages(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(imageService.listAllImagesWithPagination(page, size));
+        return ResponseEntity.ok(amazonS3Service.listAllImagesWithPagination(page, size));
     }
 
     @DeleteMapping("/{fileName}")
     public void deleteImage(@PathVariable String fileName) {
-        imageService.deleteImage(fileName);
+        amazonS3Service.deleteImage(fileName);
     }
 }

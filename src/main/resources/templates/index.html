@@ -780,10 +780,10 @@
     }
 
     document.getElementById('loadImages').addEventListener('click', function() {
-        loadImages(0, 12);
+        loadImages(0, 18);
     });
 
-    async function loadImages(page = 0, size = 12) {
+    async function loadImages(page = 0, size = 18) {
         const imageContainer = document.getElementById('imageContainer');
         imageContainer.innerHTML = '<div class="gallery-empty slide-up"><i class="fas fa-spinner fa-spin"></i><h3>Loading images...</h3></div>';
 
