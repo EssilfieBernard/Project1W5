@@ -47,23 +47,26 @@ public class AmazonS3Service {
         ListObjectsV2Result result = amazonS3.listObjectsV2(listObjectsRequest);
         List<S3ObjectSummary> objectSummaries = result.getObjectSummaries();
 
-        // Calculate total elements and pages
         int totalElements = objectSummaries.size();
         int totalPages = (int) Math.ceil((double) totalElements / size);
 
-        // Calculate start and end index for the requested page
         int startIndex = page * size;
         int endIndex = Math.min(startIndex + size, totalElements);
 
-        // Get sublist for the current page
-        List<String> pageContent = new ArrayList<>();
+        List<Map<String, Object>> pageContent = new ArrayList<>();
         if (startIndex < totalElements) {
             pageContent = objectSummaries.subList(startIndex, endIndex).stream()
-                    .map(summary -> amazonS3.getUrl(bucketName, summary.getKey()).toString())
+                    .map(summary -> {
+                        Map<String, Object> imageData = new HashMap<>();
+                        imageData.put("url", amazonS3.getUrl(bucketName, summary.getKey()).toString());
+                        imageData.put("fileName", summary.getKey());
+                        imageData.put("lastModified", summary.getLastModified().getTime());
+                        imageData.put("size", summary.getSize());
+                        return imageData;
+                    })
                     .collect(Collectors.toList());
         }
 
-        // Create response with pagination info
         Map<String, Object> response = new HashMap<>();
         response.put("content", pageContent);
         response.put("currentPage", page);

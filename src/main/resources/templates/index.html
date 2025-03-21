@@ -792,12 +792,12 @@
 
             if (response.ok) {
                 const data = await response.json();
-                const imageUrls = data.content;
+                const images = data.content;
                 const totalPages = data.totalPages;
                 const currentPage = data.currentPage;
                 const totalElements = data.totalElements;
 
-                if (imageUrls.length === 0) {
+                if (images.length === 0) {
                     imageContainer.innerHTML = '<div class="gallery-empty slide-up"><i class="fas fa-images"></i><h3>No images found</h3><p>Upload some images to get started</p></div>';
                     return;
                 }
@@ -806,7 +806,7 @@
 
                 const paginationInfo = document.createElement('div');
                 paginationInfo.className = 'pagination-info';
-                paginationInfo.innerHTML = `<span>Showing ${imageUrls.length} of ${totalElements} images</span>`;
+                paginationInfo.innerHTML = `<span>Showing ${images.length} of ${totalElements} images</span>`;
                 imageContainer.appendChild(paginationInfo);
 
                 const imageGrid = document.createElement('div');
@@ -828,8 +828,21 @@
                 const columns = calculateOptimalColumns();
                 imageGrid.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
 
-                imageUrls.forEach((url, index) => {
-                    const fileName = url.substring(url.lastIndexOf('/') + 1);
+                // Helper function to format date
+                const formatDate = (timestamp) => {
+                    const date = new Date(timestamp);
+                    // Format: "Mar 21, 2025"
+                    return date.toLocaleDateString(undefined, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                    });
+                };
+
+                images.forEach((image, index) => {
+                    const url = image.url;
+                    const fileName = image.fileName || url.substring(url.lastIndexOf('/') + 1);
+                    const lastModified = image.lastModified;
 
                     const card = document.createElement('div');
                     card.className = 'image-card slide-up';
@@ -871,7 +884,13 @@
 
                     const dateDiv = document.createElement('div');
                     dateDiv.className = 'image-date';
-                    dateDiv.textContent = 'Uploaded recently';
+
+                    // Display formatted date if available
+                    if (lastModified) {
+                        dateDiv.textContent = `Uploaded ${formatDate(lastModified)}`;
+                    } else {
+                        dateDiv.textContent = 'Date unavailable';
+                    }
 
                     infoDiv.appendChild(nameDiv);
                     infoDiv.appendChild(dateDiv);
@@ -892,7 +911,6 @@
                 prevButton.innerHTML = '<i class="fas fa-chevron-left"></i> Previous';
                 prevButton.disabled = currentPage === 0;
                 prevButton.onclick = () => loadImages(currentPage - 1, size);
-
 
                 const nextButton = document.createElement('button');
                 nextButton.className = 'pagination-btn';
