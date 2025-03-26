@@ -1,22 +1,20 @@
 package com.essilfie.UploadToS3;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.services.s3.S3Client;
 
-import static com.amazonaws.regions.Regions.US_EAST_1;
+import static software.amazon.awssdk.regions.Region.US_EAST_1;
 
 @Configuration
 public class BeanConfig {
 
     @Bean
-    public AmazonS3 amazonS3() {
-
-        return AmazonS3Client.builder()
-                .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
-                .withRegion(US_EAST_1)
+    public S3Client s3Client() {
+        return S3Client.builder()
+                .credentialsProvider(DefaultCredentialsProvider.create())
+                .region(US_EAST_1)
                 .build();
     }
 }

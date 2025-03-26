@@ -1,53 +1,66 @@
 package com.essilfie.UploadToS3;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.*;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.services.s3.model.*;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static software.amazon.awssdk.services.s3.model.ObjectCannedACL.PUBLIC_READ;
+
 @Service
 public class AmazonS3Service {
 
     @Autowired
-    private AmazonS3 amazonS3;
+    private S3Client s3Client;
 
     private final String bucketName = "essilfie";
 
     public String uploadImage(MultipartFile file) throws IOException {
         String fileName = generateFileName(file);
 
-        ObjectMetadata metadata = new ObjectMetadata();
-        metadata.setContentType(file.getContentType());
-        metadata.setContentLength(file.getSize());
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(fileName)
+                .contentType(file.getContentType())
+                .contentLength(file.getSize())
+                .acl(PUBLIC_READ)
+                .build();
 
-        amazonS3.putObject(new PutObjectRequest(
-                bucketName,
-                fileName,
-                file.getInputStream(),
-                metadata)
-                .withCannedAcl(CannedAccessControlList.PublicRead));
+        s3Client.putObject(putObjectRequest,
+                RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
 
-        return amazonS3.getUrl(bucketName, fileName).toString();
+        GetUrlRequest request = GetUrlRequest.builder()
+                .bucket(bucketName)
+                .key(fileName)
+                .build();
+
+        return s3Client.utilities().getUrl(request).toString();
     }
 
     public String getImageUrl(String fileName) {
-        return amazonS3.getUrl(bucketName, fileName).toString();
+        GetUrlRequest request = GetUrlRequest.builder()
+                .bucket(bucketName)
+                .key(fileName)
+                .build();
+        return s3Client.utilities().getUrl(request).toString();
     }
 
     public Map<String, Object> listAllImagesWithPagination(int page, int size) {
-        ListObjectsV2Request listObjectsRequest = new ListObjectsV2Request()
-                .withBucketName(bucketName)
-                .withMaxKeys(10000);
+        ListObjectsV2Request listObjectsRequest = ListObjectsV2Request.builder()
+                .bucket(bucketName)
+                .maxKeys(10000)
+                .build();
 
-        ListObjectsV2Result result = amazonS3.listObjectsV2(listObjectsRequest);
-        List<S3ObjectSummary> objectSummaries = result.getObjectSummaries();
+        ListObjectsV2Response result = s3Client.listObjectsV2(listObjectsRequest);
+        List<S3Object> objects = result.contents();
 
-        int totalElements = objectSummaries.size();
+        int totalElements = objects.size();
         int totalPages = (int) Math.ceil((double) totalElements / size);
 
         int startIndex = page * size;
@@ -55,13 +68,19 @@ public class AmazonS3Service {
 
         List<Map<String, Object>> pageContent = new ArrayList<>();
         if (startIndex < totalElements) {
-            pageContent = objectSummaries.subList(startIndex, endIndex).stream()
-                    .map(summary -> {
+            pageContent = objects.subList(startIndex, endIndex).stream()
+                    .map(object -> {
                         Map<String, Object> imageData = new HashMap<>();
-                        imageData.put("url", amazonS3.getUrl(bucketName, summary.getKey()).toString());
-                        imageData.put("fileName", summary.getKey());
-                        imageData.put("lastModified", summary.getLastModified().getTime());
-                        imageData.put("size", summary.getSize());
+
+                        GetUrlRequest request = GetUrlRequest.builder()
+                                .bucket(bucketName)
+                                .key(object.key())
+                                .build();
+
+                        imageData.put("url", s3Client.utilities().getUrl(request).toString());
+                        imageData.put("filename", object.key());
+                        imageData.put("lastModified", object.lastModified().toEpochMilli());
+                        imageData.put("size", object.size());
                         return imageData;
                     })
                     .collect(Collectors.toList());
@@ -78,7 +97,12 @@ public class AmazonS3Service {
     }
 
     public void deleteImage(String fileName) {
-        amazonS3.deleteObject(bucketName, fileName);
+        DeleteObjectRequest request = DeleteObjectRequest.builder()
+                .bucket(bucketName)
+                .key(fileName)
+                .build();
+
+        s3Client.deleteObject(request);
     }
 
     private String generateFileName(MultipartFile file) {
